@@ -369,7 +369,7 @@ will need improvement. To create one per video, do the following:
 
 1. Make a directory to contain the scripts output
 
-    ````
+    ```
     mkdir results
     ```
 2. Run `fingerprints.R all` to generate a fingerprint per-video, into
