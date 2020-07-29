@@ -1,3 +1,35 @@
+# Table of Contents
+* [POEMNet](#poemnet)
+  * [Requirements](#requirements)
+    * [Python](#python)
+    * [R](#r)
+    * [Other](#other)
+* [Video statistics](#video-statistics)
+  * [Overall videos' duration statistics](#overall-videos-duration-statistics)
+    * [Example](#example)
+  * [Phase duration statistics](#phase-duration-statistics)
+    * [phase\_duration\.csv structure](#phase_durationcsv-structure)
+    * [Make phase\_duration\.csv from anvil annotations](#make-phase_durationcsv-from-anvil-annotations)
+    * [Make a phase\_factors\.csv](#make-a-phase_factorscsv)
+    * [Generate statistics and plot](#generate-statistics-and-plot)
+* [Inter\-annotator stats](#inter-annotator-stats)
+  * [multiple\_annotator\.csv structure](#multiple_annotatorcsv-structure)
+  * [Make multiple\_annotator\.csv from anvil annotations](#make-multiple_annotatorcsv-from-anvil-annotations)
+  * [Generate inter\-annotator stats](#generate-inter-annotator-stats)
+* [Model Results](#model-results)
+  * [Per\-test\-video tsv file structure](#per-test-video-tsv-file-structure)
+  * [Generate model result tsvs from saiil pkl file](#generate-model-result-tsvs-from-saiil-pkl-file)
+    * [Saiil model output structure](#saiil-model-output-structure)
+    * [Create directory of model results in tsvs](#create-directory-of-model-results-in-tsvs)
+  * [Create surgical fingerprints](#create-surgical-fingerprints)
+    * [Create fingerprint for each video analyzed](#create-fingerprint-for-each-video-analyzed)
+    * [Create a side\-by\-side fingerprint](#create-a-side-by-side-fingerprint)
+  * [Generate per\-phase performance metrics and confusion matrices](#generate-per-phase-performance-metrics-and-confusion-matrices)
+    * [model\_metrics\.R generated files](#model_metricsr-generated-files)
+  * [Per\-duration statistics](#per-duration-statistics)
+* [Questions, comments, concerns, need help?](#questions-comments-concerns-need-help)
+* [Citation](#citation)
+
 # POEMNet
 Repository holds software used in
 [Automated operative phase identification in peroral endoscopic myotomy](https://doi.org/10.1007/s00464-020-07833-9).
@@ -225,15 +257,16 @@ results compared to our paper's table (in particular, Overall Fleiss'
 kappa is the same as the Krippendorf's alpha, as anticipated).
 
 # Model Results
-The following section will show you how to peform the following:
+The following section will show you how to perform the following:
 
 1. Generate individual and side-by-side surgical fingerprint plots
    for each video in the test set (eg *Fig 3* in the paper)
-2. Generate performance across phases statistics (eg *Table 3* in the
-   paper)
-3. Generate a confusion matrix (eg *Fig 4* in the paper)
-4. Generate performance across phase-duration statistics (eg *Table 4*
-   in the paper)
+2. Generate performance across phases statistics (per video in test set
+   and all videos combined) (eg *Table 3* in the paper)
+3. Generate a confusion matrix per video and across all videos
+   in the test set (eg *Fig 4* in the paper)
+4. Generate performance across phase-duration statistics on
+   user-specified duration intervals (eg *Table 4* in the paper)
 
 As in previous sections, calculations are done from a csv/tsv file, in
 this instance, it's one tsv file per video in the test set for the
