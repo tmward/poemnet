@@ -15,6 +15,7 @@ some of the scripts. Install through your distribution's package
 manager/PyPI/etc.
 
 1. `docopt` (verified to work with version `0.6.2_5`)
+2. `numpy` (verified to work with version `1.19.1`)
 
 ### R
 All calculations for the paper were performed with R 3.6. The
@@ -25,6 +26,7 @@ following packages will also be required (recommend adding with
 2. `irr` (verified to work with version `0.84.1`)
 3. `caret` (verified to work with version `6.0-86`)
 4. `docopt` (verified to work with version `0.6.1`)
+5. `e1071` (missed dependency in the `caret` package)
 
 ### Other
 The `video_lengths.py` script will require ``ffprobe`` which is
@@ -215,45 +217,248 @@ interannotator_stats.R -f fleiss.csv -k kripp.csv phase_factors.csv \
     multiple_annotators.csv 
 ```
 
-# Fingerprints
-1. Run `pkl_dump.py` on pkl file to find out the class name, ground
-   truth dict name, and model name
-2. Run `make_model_results_tsv.py` to generate a directory full of TSVs
-   that hold results per video
-3. Run `Rscript fingerprints.R all` to generate a fingerprint per-video
-	- eg `Rscript ../stats/for_git/fingerprints.R all -o /tmp/results -f video_stats/phase_factors.csv -t confusion/tsvs`
-4. Run `Rscript fingerprints.R two` to generate a side-by-side
-   fingerprint
-   	- eg `Rscript ../stats/for_git/fingerprints.R two -H 7.5 -W 15 -o /tmp/results -f video_stats/phase_factors.csv -t confusion/tsvs video_08.tsv "Straightforward" video_10.tsv "Tortuous Esophagus"`
+Of note, to keep things consistent across calculation of Krippendorff's
+alpha and Fleiss' kappa, we now count "Idle" aka "NA" time the same
+across the two groups. Before in the Fleiss' kappa these times were not
+included for the calculations. You will notice slightly different
+results compared to our paper's table (in particular, Overall Fleiss'
+kappa is the same as the Krippendorf's alpha, as anticipated).
 
-# Metrics and confusion matrix output
-1. Run `pkl_dump.py` on pkl file to find out the class name, ground
-   truth dict name, and model name
-2. Run `make_model_results_tsv.py` to generate a directory full of TSVs
-   that hold results per video
-3. Run `Rscript model_metrics.R`
-	- create `results_dir` first
-	- for POEMpaper used width 12, height 8
-	- for each video, and all vids combined, outputs:
-		1. raw.tsv: all metrics data the R caret package calculates,
-		   including overall accuracy (with CI) and per-phase recall,
-		   precision, etc.
-		2. perclass.tsv: table with precision, recall, f1, and
-		   prevalence per-phase and averaged overall, both
-		   prevalence and non-prevalence weighted (this is
-		   identical to the table in the poemnet paper)
-		3. confusion.tsv: table with tally for model's different
-		   classifications for each gt phase
-		4. recall and precision confusion matrix images
+# Model Results
+The following section will show you how to peform the following:
 
-# Per duration stats
-1. Run `pkl_dump.py` on pkl file to find out the class name, ground
-   truth dict name, and model name
-2. Run `make_model_results_tsv.py` to generate a directory full of TSVs
-   that hold results per video
+1. Generate individual and side-by-side surgical fingerprint plots
+   for each video in the test set (eg *Fig 3* in the paper)
+2. Generate performance across phases statistics (eg *Table 3* in the
+   paper)
+3. Generate a confusion matrix (eg *Fig 4* in the paper)
+4. Generate performance across phase-duration statistics (eg *Table 4*
+   in the paper)
+
+As in previous sections, calculations are done from a csv/tsv file, in
+this instance, it's one tsv file per video in the test set for the
+model. I will outline the structure of that tsv file and also show how,
+from our typical model's output, you can generate the tsv file. Then I
+will show how to generate the figures and statistics from the tsv files.
+
+## Per-test-video tsv file structure
+To generate summary statistics, surgical fingerprint plots, and
+confusion matrices, there should be a directory full of tsvs. Each tsv
+contains a row per video second, with each row containing information
+below:
+
+| **variable** | **class** | **description** |
+|:---|:--|:------------|
+| `second` | integer | second of the video |
+| `vid_num` | integer | video's number in the test set | 
+| `block` | integer | phase's block number. each time a phase transitions to another phase this increments| 
+| `gt` | character | ground truth label for the phase | 
+| `predicted` | character | predicted (most likely) phase| 
+| `phase_1 name` | double | model's probability estimate that the current video second is `phase_1 name`| 
+| `phase_2 name` | double | model's probability estimate that the current video second is `phase_2 name`| 
+| `phase_... name` | double | model's probability estimate that the current video second is `phase_... name`| 
+| `phase_N name` | double | model's probability estimate that the current video second is `phase_N name`| 
+
+Replace the column variable names `phase_1 name`, `phase_2 name`, etc with
+whatever the phase labels are that your model is trying to identify.
+
+## Generate model result tsvs from saiil pkl file
+This section describes how to generate tsvs detailed in the prior
+section. In particular, it shows how to generate it from a `pkl` file
+that our model outputs.
+
+### Saiil model output structure
+POEMNet's results on the test set are published in the
+`examples/poemnet.pkl`. The pkl file contains a single python
+dictionary with keys `class_names`, `gt`, `lstm:`, and `lstm_hmm`. These
+contain:
+
+- `class_names`: list of class (phase) names, eg `mucos_close`
+- `gt`: a dictionary with keys `[1, 2, ..., 20]`, one for each video.
+   Each key's value is a list of the ground truth labels, with
+   the list's index corresponding to the video second.
+- `lstm:`: a dictionary with keys `[1, 2, ..., 20]`, one for each
+   video. Each key's value is a `numpy.ndarray`, with each index holding
+   the likelihoods of that video's second being categorized as each
+   of the different class names (aka phases).
+- `lstm_hmm`: same as `lstm:` except the `lstm:` results with additional
+  HMM smoothing added
+
+To quickly ascertain the contents of the pkl, you can run the script
+`pkl_dump.py` such as below:
+
+```
+pkl_dump.py poemnet_results.pkl
+```
+that will output:
+```
+Class names found in 'class_names' are:
+	muc_incis
+	mucos_close
+	myotomy
+	submuc_inject
+	tunnel
+A model's results for 20 videos found in: 'lstm_hmm'
+Ground truth for 20 videos found in: 'gt'
+A model's results for 20 videos found in: 'lstm:'
+```
+This information will come in handy when you run
+`make_model_results_tsv.py` later.
+
+### Create directory of model results in tsvs
+Now that we know the pkl structure, we can run
+`make_model_results_tsv.py` to generate a directory full of TSVs for the
+model's results (without HMM smoothing) called `video_tsvs` for further
+analysis:
+
+```
+make_model_result_tsvs.py -c 'class_names' -p poemnet_results.pkl \
+    -g 'gt' -m 'lstm:' video_tsvs
+```
+The command-line options are documented by invoking the script with
+`-h`. 
+
+## Create surgical fingerprints
+Surgical fingerprints are a way to display the model's phase likelihoods for
+each second of the video compared to the annotated ground truth. An
+example is in *Fig 3* of the paper. Below we will show you how to
+generate a fingerprint for each video the model analysed, and how to
+create a "side-by-side" fingerprint like in *Fig 3*.
+
+Both use the same script, `fingerprints.R`. They will require a
+`phase_factors.csv` file already written as documented above and a
+directory full of model result TSVs (one per video).
+
+### Create fingerprint for each video analyzed
+Creating a fingerprint per each video allows you to rapidly analyze the
+model's performance on a per-video basis and try to target areas that
+will need improvement. To create one per video, do the following:
+
+1. Make a directory to contain the scripts output
+
+    ````
+    mkdir results
+    ```
+2. Run `fingerprints.R all` to generate a fingerprint per-video, into
+   `results/`, eg:
+
+    ```
+    fingerprints.R all -o results/ -f phase_factors.csv -t video_tsvs/
+    ```
+    Optionally you can also specify image width, height, and format (use
+    the `-h` command line switch to see fully how to use the script).
+
+### Create a side-by-side fingerprint
+As in the POEMNet paper, you may want to generate a side-by-side
+comparison of two fingerprints to highlight differences in model
+analysis of each case. To do so (such as we did to generate the figure
+in the paper), do the following:
+
+```
+fingerprints.R two -W 15 -H 7.5 -o results/ \
+    -f ../video_info/phase_factors.csv -t video_tsvs \
+    video_08.tsv "Straightforward" video_10.tsv "Tortuous Esophagus"
+```
+This will generate a 15x7.5 image called
+`results/video_08_video_10_fingerprint.png` that shows the fingerprint
+for video 08 on the left with the title "Straightforward" and the
+fingerprint for video 10 on the right with the title "Tortuous
+Esophagus".
+
+## Generate per-phase performance metrics and confusion matrices
+To generate per-phase precision, recall, F1 score, and prevalence
+statistics (*Table 3* in the paper) and recall/precision confusion
+matrices (seen in POEMNet's *Fig 4*), follow the below steps:
+
+1. Create a directory of TSVs, with one per model result on a test
+   set video, as detailed above. For example, create a `video_tsvs`
+   directory.
+2. Make a directory to store the per-phase and confusion matrix results:
+
+    ```
+    mkdir results_dir
+    ```
+3. Generate model metrics and confusion matrices:
+
+    ```
+    model_metrics.R -c -o results_dir/ -f phase_factors.csv video_tsvs/
+    ```
+    Of note, in the paper we used a width of 12 and height of 8 which
+    you can specify as a command option (see output from `-h` for help)
+
+### `model_metrics.R` generated files
+`model_metrics.R` generates a number of files that analyze the model's
+performance on the test set. Assuming you followed the above, the
+`results_dir/` will contain, for each video and for all videos combined,
+the following files (labeled either `combine_foo` or `video_NN_foo`), 
+where `foo` can be:
+
+1. `raw.tsv`: Raw results from analysis with `caret` passed through
+   `broom::tidy()`. This includes overall accuracy (with CI) and
+   per-phase recall, precision, etc.
+2. `perclass.tsv`: A tsv that shows, per-phase and overall, the
+   model's precision, recall, f1-score, and prevalence. The one for
+   combined is identical to *Table 3* in the paper
+3. `confusion.tsv`: A tsv that puts the caret results into a "tidy"
+   format from which to generate the plots. It includes both the number
+   and proportion of phases classified by the model as each phase.
+4. `precision.png`: If specified to generate, an image of the precision
+   confusion matrix.
+5. `recall.png`: If specified to generate, an image of the recall
+   confusion matrix. The one for combined is identical to the confusion
+   matrix in *Fig 4* of the paper.
+
+## Per-duration statistics
+We noticed for the shorter phases that our model had lower performance.
+To clearly convey this, we created a script to generate statistics on
+accuracy called `per_block_duration_accuracy.R`. What this does is
+examine the model's accuracy across blocks of different lengths. A block
+is a continuous phase in the surgery that is bounded by different
+phases. For example, if a surgeon "injects the submucosa" then "does a
+mucosotomy," notices that they need more injection, so "injects the
+submucosa" again, this counts as three different blocks. This allows us
+to analyze short continuous segments, even if they typically are a long
+phase.
+
+To analyze different block lengths (eg from 1-30 seconds, 31-60 seconds,
+etc), you need to create a csv file that holds your preferred block
+lengths that has the following structure:
+
+| **variable** | **class** | **description** |
+|:-|:-|:------------|
+| `start` | double | Start time, in seconds, for the current interval|
+| `end` | double | End time, in seconds, for the current interval. To specify until the end of the video, use 'Inf' which stands for infinity in R|
+
+An example `durations.csv` exists in `examples/`.
+
+To generate per-duration model accuracy statistics (as seen in *Table 4*
+of the Results section of the POEMNet paper), do the following:
+
+1. Create a directory of TSVs, with one per model result on a test
+   set video, as detailed previously. For example, create a `video_tsvs`
+   directory.
+2. Make a `durations.csv` as above
 3. Run `per_block_duration_accuracy.R`
-	- the example file `example_durations.csv` has durations for
-	  poem paper
+
+    ```
+    per_block_duration_accuracy.R -i durations.csv \
+	    -o per_block_duration_accuracy.tsv video_tsvs
+    ```
+
+The output file `per_block_duration_accuracy.tsv` will contain:
+```
+start  end  accuracy
+1      30   0.4178082191780822
+31     60   0.6431818181818182
+61     300  0.7601941747572816
+301    600  0.9359582542694497
+600    Inf  0.8777989802916009
+```
+Which is identical to *Table 4* in the paper!
+
+# Questions, comments, concerns, need help?
+Please contact me in the communication medium of your preference listed on my
+[Contact page](https://thomasward.com/contact/).
 
 # Citation
 If you found the code helpful for your research, please cite our paper:
