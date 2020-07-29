@@ -487,7 +487,10 @@ start  end  accuracy
 301    600  0.9359582542694497
 600    Inf  0.8777989802916009
 ```
-Which is identical to *Table 4* in the paper!
+Which is identical to *Table 4* results for POEMNet in the paper! If you
+also want to generate the results for after HMM post-processing, you
+will need to generate another TSV directory for the `lstm_hmm` model and
+then run `per_block_duration_accuracy.R` on this directory as well.
 
 # Questions, comments, concerns, need help?
 Please contact me in the communication medium of your preference listed on my
