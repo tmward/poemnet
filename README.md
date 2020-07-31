@@ -37,7 +37,7 @@ In particular, it houses the scripts used to generate the statistics and
 visualizations used in the Results section of the paper. Documentation
 for the scripts includes heavy commenting within each script, an
 informative commit message per script, and the below README. If you
-still have any questions, please reach out to me!
+still have any questions, please contact me.
 
 ## Requirements
 
@@ -102,7 +102,7 @@ scripts to convert that information into a csv of the correct structure.
 Otherwise if you stored your data in another format, I recommend
 skipping the headache of your annotation format -> Anvil -> CSV and
 instead write a program to generate a CSV directly from your annotation
-format. If you need help with this, please reach out to me! Happy to
+format. If you need help with this, please contact me. Happy to
 offer guidance and/or write a script.
 
 ### `phase_duration.csv` structure
@@ -174,11 +174,11 @@ optionally invoke the time scale to be logarithmic. Phases will
 be displayed on the Y-axis in the order they are specified in the
 `phase_factors.csv`. Images output format (eg png, jpg, pdf) is
 automatically inferred from the specified file extension given. In
-general, `pdf` will provide the best image format (text will look the
+general, `pdf` will provide optimal image quality (text will look the
 best upon import into LaTeX). You can also specify the height and width
 of the output boxplot. Below is an example invocation that outputs a TSV
 with summary statistics in `durations.tsv` and a boxplot `boxplot.png`
-that is a 12x8 cm image with a log scale for the time axis:
+that is a 12×8 cm image with a log scale for the time axis:
 
 ```
 overall_phase_stats.R -f phase_factors.csv -o durations.tsv \
@@ -389,10 +389,10 @@ in the paper), do the following:
 
 ```
 fingerprints.R two -W 15 -H 7.5 -o results/ \
-    -f ../video_info/phase_factors.csv -t video_tsvs \
+    -f phase_factors.csv -t video_tsvs \
     video_08.tsv "Straightforward" video_10.tsv "Tortuous Esophagus"
 ```
-This will generate a 15x7.5 image called
+This will generate a 15×7.5 image called
 `results/video_08_video_10_fingerprint.png` that shows the fingerprint
 for video 08 on the left with the title "Straightforward" and the
 fingerprint for video 10 on the right with the title "Tortuous
