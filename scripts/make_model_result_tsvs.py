@@ -69,8 +69,10 @@ def make_header(labels):
         (second,vid_num,block,gt,predicted,step_1,...,step_N) with step
        Step names come from the labels.
     """
-    return '\t'.join(chain(('second', 'vid_num', 'block', 'gt', 'predicted'),
-                           labels)) + '\n'
+    return (
+        "\t".join(chain(("second", "vid_num", "block", "gt", "predicted"), labels))
+        + "\n"
+    )
 
 
 def make_line(vid_sec, line):
@@ -89,8 +91,7 @@ def make_line(vid_sec, line):
         3. Join the combined iterable together with '\t' to make a TSV
         4. End it with a '\n'
     """
-    return '\t'.join(map(str,
-                         chain((vid_sec,), islice(line, 4), line[4]))) + '\n'
+    return "\t".join(map(str, chain((vid_sec,), islice(line, 4), line[4]))) + "\n"
 
 
 def make_vid_maps(pkl, gt_name, labels, model_name):
@@ -114,10 +115,8 @@ def make_vid_maps(pkl, gt_name, labels, model_name):
     # create column for predicted (aka most likely) step. Needs labels
     # to be able to correlate index of likeliest step to human readable
     # label
-    model_best_predictions = map(get_likeliest_step,
-                                 model_likelihoods, repeat(labels))
-    return map(zip,
-               vid_nums, blocks, gts, model_best_predictions, model_likelihoods)
+    model_best_predictions = map(get_likeliest_step, model_likelihoods, repeat(labels))
+    return map(zip, vid_nums, blocks, gts, model_best_predictions, model_likelihoods)
 
 
 def make_vidname(tsv_dir, num):
@@ -127,13 +126,13 @@ def make_vidname(tsv_dir, num):
 
 def read_pkl(pkl_filename):
     """Loads pickle file."""
-    with open(pkl_filename, 'rb') as pkl_file:
+    with open(pkl_filename, "rb") as pkl_file:
         return pickle.load(pkl_file)
 
 
 def write_tsv(tsv_file, header, vid_map):
     """Write TSV for video map"""
-    with open(tsv_file, 'w') as vid_file:
+    with open(tsv_file, "w") as vid_file:
         vid_file.write(header)
         # use enumerate to generate a value for the second for each
         # gt/prediction
@@ -150,11 +149,11 @@ def write_tsvs(tsv_dir, labels, vid_maps):
 
 def main(args):
     """Generate TSV for each video in pkl holding GT and prediction info."""
-    pkl_file = args.get('-p')
-    gt_name = args.get('-g')
-    model_name = args.get('-m')
-    class_names = args.get('-c')
-    tsv_dir = args.get('TSVDIR')
+    pkl_file = args.get("-p")
+    gt_name = args.get("-g")
+    model_name = args.get("-m")
+    class_names = args.get("-c")
+    tsv_dir = args.get("TSVDIR")
 
     os.mkdir(tsv_dir)
 

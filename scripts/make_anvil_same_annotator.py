@@ -16,14 +16,15 @@ import re
 import sys
 
 
-def standardize_annotator(annotation, annotator='annotator'):
+def standardize_annotator(annotation, annotator="annotator"):
     """Substitute coder name in annotation for annotator."""
     # Anvil line for coder: <info key="coder" type="String">TMW</info>
     # regex matches line prior to the coder name in group 1, coder name
     # in group 2, and remainder in group 3, so return string with group
     # 2 substituted as 'annotator'
-    return re.sub(r"(<.+key=\"coder\".+>)(.+)(</info>)",
-                  r"\1" + annotator + r"\3", annotation)
+    return re.sub(
+        r"(<.+key=\"coder\".+>)(.+)(</info>)", r"\1" + annotator + r"\3", annotation
+    )
 
 
 def main():
@@ -40,11 +41,12 @@ def main():
     os.makedirs(new_dir, exist_ok=True)
 
     for filename in os.listdir(old_dir):
-        if not filename.casefold().endswith(('.anvil', '.xml')):
+        if not filename.casefold().endswith((".anvil", ".xml")):
             continue
         new_filename = os.path.join(new_dir, filename)
-        with open(os.path.join(old_dir, filename), 'r') as old_file,\
-                open(new_filename, 'w') as new_file:
+        with open(os.path.join(old_dir, filename), "r") as old_file, open(
+            new_filename, "w"
+        ) as new_file:
             annotation = old_file.read()
             new_file.write(standardize_annotator(annotation))
 

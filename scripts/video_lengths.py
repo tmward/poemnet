@@ -31,17 +31,21 @@ def get_videos(vid_dir):
 def get_video_length(video_file):
     """Return, in seconds, length of video_file."""
     command = [
-        'ffprobe', '-select_streams', 'v:0', '-show_entries',
-        'stream=duration', '-of', 'compact=nokey=1:print_section=0', video_file
+        "ffprobe",
+        "-select_streams",
+        "v:0",
+        "-show_entries",
+        "stream=duration",
+        "-of",
+        "compact=nokey=1:print_section=0",
+        video_file,
     ]
     try:
-        p = subprocess.run(command,
-                           stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE,
-                           check=True)
+        p = subprocess.run(
+            command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True
+        )
     except subprocess.CalledProcessError:
-        raise ValueError(
-            f"ffprobe could not calculate length of '{video_file}'.")
+        raise ValueError(f"ffprobe could not calculate length of '{video_file}'.")
     # ffprobe outputs to stdout a string of vidlength in seconds as a
     # float, just want to nearest second (eg it returns 3.00000) so cast
     # string to float then int
@@ -55,7 +59,7 @@ def get_stat_funcs():
 
 def main(args):
     """Output video length statistics."""
-    vid_dir = args.get('VIDEODIR')
+    vid_dir = args.get("VIDEODIR")
     lengths = list(map(get_video_length, get_videos(vid_dir)))
     print(f"For the videos in '{vid_dir}', in seconds:")
     for stat in get_stat_funcs():

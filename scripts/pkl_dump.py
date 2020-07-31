@@ -21,7 +21,7 @@ import numpy as np
 
 def main(pkl_filename):
     """Dumps pertinent info from model output pkl file"""
-    with open(pkl_filename, 'rb') as pkl_file:
+    with open(pkl_filename, "rb") as pkl_file:
         pkl = pickle.load(pkl_file)
 
     # pkl structure is a dictionary with keys:
@@ -53,11 +53,9 @@ def main(pkl_filename):
             if contents_type == list:
                 print(f"Ground truth for {num_videos} videos found in: '{k}'")
             elif contents_type == np.ndarray:
-                print(
-                    f"A model's results for {num_videos} videos found in: '{k}'"
-                )
+                print(f"A model's results for {num_videos} videos found in: '{k}'")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     ARGS = docopt(__doc__)
-    main(ARGS['PKLFILE'])
+    main(ARGS["PKLFILE"])
